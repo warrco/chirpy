@@ -1,2 +1,11 @@
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+*.out
 *.rest
-out
+go.work
+go.work.sum
+.env
