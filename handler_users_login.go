@@ -6,18 +6,19 @@ import (
 	"time"
 
 	"github.com/warrco/chirpy/internal/auth"
+	"github.com/warrco/chirpy/internal/database"
 )
 
 func (cfg *apiConfig) handlerUsersLogin(w http.ResponseWriter, r *http.Request) {
 	type parameters struct {
-		Password         string `json:"password"`
-		Email            string `json:"email"`
-		ExpiresInSeconds *int   `json:"expires_in_seconds"`
+		Password string `json:"password"`
+		Email    string `json:"email"`
 	}
 
 	type response struct {
 		User
-		Token string `json:"token"`
+		Token        string `json:"token"`
+		RefreshToken string `json:"refresh_token"`
 	}
 
 	decoder := json.NewDecoder(r.Body)
@@ -39,14 +40,23 @@ func (cfg *apiConfig) handlerUsersLogin(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	expirationSeconds := 3600
-	if params.ExpiresInSeconds != nil && *params.ExpiresInSeconds > 0 {
-		expirationSeconds = min(*params.ExpiresInSeconds, 3600)
-	}
-
-	token, err := auth.MakeJWT(user.ID, cfg.secret, time.Duration(expirationSeconds)*time.Second)
+	token, err := auth.MakeJWT(user.ID, cfg.secret, time.Hour)
 	if err != nil {
 		respondWithError(w, http.StatusInternalServerError, "Could not create JWT", err)
+		return
+	}
+
+	refresh_token, err := auth.MakeRefreshToken()
+	if err != nil {
+		respondWithError(w, http.StatusInternalServerError, "Could not create refresh token", err)
+	}
+
+	_, err = cfg.db.CreateToken(r.Context(), database.CreateTokenParams{
+		Token:  refresh_token,
+		UserID: user.ID,
+	})
+	if err != nil {
+		respondWithError(w, http.StatusInternalServerError, "Could not save refresh token", err)
 		return
 	}
 
@@ -57,6 +67,7 @@ func (cfg *apiConfig) handlerUsersLogin(w http.ResponseWriter, r *http.Request) 
 			UpdatedAt: user.UpdatedAt,
 			Email:     user.Email,
 		},
-		Token: token,
+		Token:        token,
+		RefreshToken: refresh_token,
 	})
 }
