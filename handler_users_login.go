@@ -26,6 +26,7 @@ func (cfg *apiConfig) handlerUsersLogin(w http.ResponseWriter, r *http.Request) 
 	err := decoder.Decode(&params)
 	if err != nil {
 		respondWithError(w, http.StatusInternalServerError, "Unexepected format in the request", err)
+		return
 	}
 
 	user, err := cfg.db.GetUser(r.Context(), params.Email)
@@ -49,6 +50,7 @@ func (cfg *apiConfig) handlerUsersLogin(w http.ResponseWriter, r *http.Request) 
 	refresh_token, err := auth.MakeRefreshToken()
 	if err != nil {
 		respondWithError(w, http.StatusInternalServerError, "Could not create refresh token", err)
+		return
 	}
 
 	_, err = cfg.db.CreateToken(r.Context(), database.CreateTokenParams{
