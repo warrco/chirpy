@@ -1,13 +1,15 @@
 package main
 
 import (
+	"database/sql"
 	"encoding/json"
+	"errors"
 	"net/http"
 
 	"github.com/google/uuid"
 )
 
-func (cfg *apiConfig) handlerUsersUpgrade(w http.ResponseWriter, r *http.Request) {
+func (cfg *apiConfig) handlerWebhooks(w http.ResponseWriter, r *http.Request) {
 	type parameters struct {
 		Event string `json:"event"`
 		Data  struct {
@@ -28,9 +30,13 @@ func (cfg *apiConfig) handlerUsersUpgrade(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	err = cfg.db.UpgradeUser(r.Context(), params.Data.UserID)
+	_, err = cfg.db.UpgradeUser(r.Context(), params.Data.UserID)
 	if err != nil {
-		respondWithError(w, http.StatusNotFound, "Unable to upgrade user", err)
+		if errors.Is(err, sql.ErrNoRows) {
+			respondWithError(w, http.StatusNotFound, "Unable to upgrade user", err)
+			return
+		}
+		respondWithError(w, http.StatusInternalServerError, "Could not update the users", err)
 		return
 	}
 
