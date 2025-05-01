@@ -39,6 +39,7 @@ func (cfg *apiConfig) handlerChirpsGet(w http.ResponseWriter, r *http.Request) {
 	chirp, err := cfg.db.GetChirp(r.Context(), chirpID)
 	if err != nil {
 		respondWithError(w, http.StatusNotFound, "failed to get chirp", err)
+		return
 	}
 
 	respondWithJson(w, http.StatusOK, Chirp{
