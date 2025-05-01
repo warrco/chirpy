@@ -101,3 +101,17 @@ func MakeRefreshToken() (string, error) {
 
 	return token, nil
 }
+
+func GetAPIKey(headers http.Header) (string, error) {
+	authHeader := headers.Get("Authorization")
+	if authHeader == "" {
+		return "", fmt.Errorf("authorization header not set")
+	}
+
+	fields := strings.Fields(authHeader)
+	if len(fields) < 2 || fields[0] != "ApiKey" {
+		return "", fmt.Errorf("not a Polka API key")
+	}
+
+	return fields[1], nil
+}
