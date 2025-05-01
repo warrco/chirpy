@@ -7,25 +7,55 @@ import (
 )
 
 func (cfg *apiConfig) handlerChirpsRetrieve(w http.ResponseWriter, r *http.Request) {
+	authorIDString := r.URL.Query().Get("author_id")
+
 	response := []Chirp{}
 
-	chirps, err := cfg.db.GetChirps(r.Context())
-	if err != nil {
-		respondWithError(w, http.StatusInternalServerError, "failed to retrieve chirps", err)
-		return
-	}
+	if len(s) > 0 {
+		authorID, err := uuid.Parse(authorIDString)
+		if err != nil {
+			respondWithError(w, http.StatusBadRequest, "Not a valid author ID", err)
+			return
+		}
 
-	for _, chirp := range chirps {
-		response = append(response, Chirp{
-			ID:        chirp.ID,
-			CreatedAt: chirp.CreatedAt,
-			UpdatedAt: chirp.UpdatedAt,
-			Body:      chirp.Body,
-			UserID:    chirp.UserID,
-		})
-	}
+		chirps, err := cfg.db.GetChirpsByID(r.Context(), authorID)
+		if err != nil {
+			respondWithError(w, http.StatusInternalServerError, "Failed to retrieve chirps", err)
+			return
+		}
 
-	respondWithJson(w, http.StatusOK, response)
+		for _, chirp := range chirps {
+			response = append(response, Chirp{
+				ID:        chirp.ID,
+				CreatedAt: chirp.CreatedAt,
+				UpdatedAt: chirp.UpdatedAt,
+				Body:      chirp.Body,
+				UserID:    chirp.UserID,
+			})
+
+		}
+
+		respondWithJson(w, http.StatusOK, response)
+	} else {
+
+		chirps, err := cfg.db.GetChirps(r.Context())
+		if err != nil {
+			respondWithError(w, http.StatusInternalServerError, "Failed to retrieve chirps", err)
+			return
+		}
+
+		for _, chirp := range chirps {
+			response = append(response, Chirp{
+				ID:        chirp.ID,
+				CreatedAt: chirp.CreatedAt,
+				UpdatedAt: chirp.UpdatedAt,
+				Body:      chirp.Body,
+				UserID:    chirp.UserID,
+			})
+		}
+
+		respondWithJson(w, http.StatusOK, response)
+	}
 }
 
 func (cfg *apiConfig) handlerChirpsGet(w http.ResponseWriter, r *http.Request) {
