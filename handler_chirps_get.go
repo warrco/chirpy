@@ -11,7 +11,7 @@ func (cfg *apiConfig) handlerChirpsRetrieve(w http.ResponseWriter, r *http.Reque
 
 	response := []Chirp{}
 
-	if len(s) > 0 {
+	if len(authorIDString) > 0 {
 		authorID, err := uuid.Parse(authorIDString)
 		if err != nil {
 			respondWithError(w, http.StatusBadRequest, "Not a valid author ID", err)
